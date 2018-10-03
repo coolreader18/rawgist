@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -34,7 +33,6 @@ func main() {
 	cache := gcache.New(50).ARC().Expiration(time.Hour).Build()
 	getGist := func(id string) (gistRes, error) {
 		cacheVal, _ := cache.Get(id)
-		fmt.Println(cacheVal)
 		if cacheVal != nil {
 			return cacheVal.(gistRes), nil
 		}
