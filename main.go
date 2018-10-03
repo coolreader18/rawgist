@@ -1,12 +1,14 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
-	"github.com/BenLubar/memoize"
+	"github.com/bluele/gcache"
 	"github.com/joho/godotenv"
 	"github.com/octokit/go-octokit/octokit"
 )
@@ -20,12 +22,22 @@ func main() {
 	// ignore the error, it may be in the environment already
 	godotenv.Load()
 
-	client := octokit.NewClient(octokit.TokenAuth{
-		AccessToken: os.Getenv("GITHUB_TOKEN"),
-	})
+	var auth octokit.AuthMethod = nil
+	if token, exists := os.LookupEnv("GITHUB_TOKEN"); exists {
+		auth = octokit.TokenAuth{
+			AccessToken: token,
+		}
+	}
+	client := octokit.NewClient(auth)
 	gists := client.Gists()
 
-	getGist := memoize.Memoize(func(id string) (gistRes, error) {
+	cache := gcache.New(50).ARC().Expiration(time.Hour).Build()
+	getGist := func(id string) (gistRes, error) {
+		cacheVal, _ := cache.Get(id)
+		fmt.Println(cacheVal)
+		if cacheVal != nil {
+			return cacheVal.(gistRes), nil
+		}
 		var result gistRes
 		gist, res := gists.One(nil, octokit.M{
 			"gist_id": id,
@@ -37,8 +49,9 @@ func main() {
 			owner:   gist.Owner.Login,
 			version: gist.History[0].Version,
 		}
+		cache.Set(id, result)
 		return result, nil
-	}).(func(id string) (gistRes, error))
+	}
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		params := strings.Split(r.URL.String(), "/")
