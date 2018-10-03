@@ -21,7 +21,7 @@ func main() {
 	// ignore the error, it may be in the environment already
 	godotenv.Load()
 
-	var auth octokit.AuthMethod = nil
+	var auth octokit.AuthMethod
 	if token, exists := os.LookupEnv("GITHUB_TOKEN"); exists {
 		auth = octokit.TokenAuth{
 			AccessToken: token,
@@ -72,7 +72,7 @@ func main() {
 
 		http.Redirect(w, r, newURL, 301)
 	})
-	var port string = "3030"
+	port := "3030"
 	_, isNow := os.LookupEnv("NOW")
 	envPort, portExists := os.LookupEnv("PORT")
 	if isNow {
