@@ -74,10 +74,13 @@ func main() {
 
 		http.Redirect(w, r, newURL, 301)
 	})
+	var port string = "3030"
 	_, isNow := os.LookupEnv("NOW")
+	envPort, portExists := os.LookupEnv("PORT")
 	if isNow {
-		log.Fatal(http.ListenAndServe(":443", nil))
-	} else {
-		log.Fatal(http.ListenAndServe(":3030", nil))
+		port = "443"
+	} else if portExists {
+		port = envPort
 	}
+	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
