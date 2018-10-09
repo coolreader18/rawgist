@@ -67,7 +67,7 @@ func main() {
 		}
 
 		newURL :=
-			"https://cdn.rawgit.com/" +
+			"https://gistcdn.githack.com/" +
 				gist.owner + "/" + id + "/raw/" + gist.version + "/" + file
 
 		http.Redirect(w, r, newURL, 301)
