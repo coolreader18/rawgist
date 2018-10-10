@@ -69,7 +69,7 @@ func main() {
 		newURL :=
 			"https://gistcdn.githack.com/" +
 				gist.owner + "/" + id + "/raw/" + gist.version + "/" + file
-
+		w.Header().Set("Access-Control-Allow-Origin", "*")
 		http.Redirect(w, r, newURL, 301)
 	})
 	port := "3030"
