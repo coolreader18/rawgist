@@ -30,27 +30,6 @@ func main() {
 	client := octokit.NewClient(auth)
 	gists := client.Gists()
 
-	cache := gcache.New(50).ARC().Expiration(time.Hour).Build()
-	getGist := func(id string) (gistRes, error) {
-		cacheVal, _ := cache.Get(id)
-		if cacheVal != nil {
-			return cacheVal.(gistRes), nil
-		}
-		var result gistRes
-		gist, res := gists.One(nil, octokit.M{
-			"gist_id": id,
-		})
-		if res.HasError() {
-			return result, res.Err
-		}
-		result = gistRes{
-			owner:   gist.Owner.Login,
-			version: gist.History[0].Version,
-		}
-		cache.Set(id, result)
-		return result, nil
-	}
-
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		params := strings.Split(r.URL.String(), "/")
 		if len(params) != 3 {
@@ -60,7 +39,7 @@ func main() {
 
 		id, file := params[1], params[2]
 
-		gist, err := getGist(id)
+		gist, err := getGist(gists, id)
 		if err != nil {
 			http.Error(w, "Gist not found", http.StatusNotFound)
 			return
@@ -81,4 +60,26 @@ func main() {
 		port = envPort
 	}
 	log.Fatal(http.ListenAndServe(":"+port, nil))
+}
+
+var cache = gcache.New(50).ARC().Expiration(time.Hour).Build()
+
+func getGist(gists *octokit.GistsService, id string) (gistRes, error) {
+	cacheVal, _ := cache.Get(id)
+	if cacheVal != nil {
+		return cacheVal.(gistRes), nil
+	}
+	var result gistRes
+	gist, res := gists.One(nil, octokit.M{
+		"gist_id": id,
+	})
+	if res.HasError() {
+		return result, res.Err
+	}
+	result = gistRes{
+		owner:   gist.Owner.Login,
+		version: gist.History[0].Version,
+	}
+	cache.Set(id, result)
+	return result, nil
 }
